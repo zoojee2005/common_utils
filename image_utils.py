@@ -44,3 +44,62 @@ def im_norm_crop(img, power = 5):
     img = img[h_trim[0]:(org_h - h_trim[1]), w_trim[0]:(org_w - w_trim[1]), ...]
     
     return img
+
+#input image & mask's shape should be [H, W, C]
+def mask_overlay(image, mask, color=(0, 255, 0)):
+    """
+    Helper function to visualize mask on the top of the car
+    """
+    _, _, channel = mask.shape
+    if channel == 1:
+        mask = np.dstack((mask, mask, mask))         
+    assert channel == 1 or channel == 3, '[error] Input mask\'s channel is {}, only 1 or 3 channels are supported.'.format(channel)    
+    
+    #set true label to specified color
+    mask = mask & color
+    
+    mask = mask.astype(np.uint8)
+    weighted_sum = cv2.addWeighted(mask, 0.5, image, 0.5, 0.)
+    img = image.copy()
+    ind = mask[:, :, 1] > 0    
+    img[ind] = weighted_sum[ind]    
+    return img
+
+
+#input image & mask's shape should be [H, W, C]
+def heatmap_overlay(image, heatmap, heatmap_weight = 0.5, threshold = 0.1): 
+    """ 
+    Image are seperated to two parts:
+    (1) correspond pixels whose value on the heatmap > threshold 
+    (2) other pixels on the heatmap <= threshold
+    Pixels on original image belong to (2) are keeped and pxiels belong to (1) are replaced by adding weighted image.
+    
+    # Arguments
+        image:      image object (layout is HWC)
+        heatmap:    heatmap (layout is HWC)
+        heatmap_weight: weight of heatmap to be added into image
+        threshold:  pixels whose value are less than threshold in heatmap will be ignored
+        
+    # Return
+        merged image
+    """   
+    assert image.shape[:2] == heatmap.shape[:2], \
+            '[error] image size {} should be equal to heatmap size {}'.format(image.shape, heatmap.shape)
+    _, _, channel = heatmap.shape
+    if channel == 1:
+        heatmap = np.dstack((heatmap, heatmap, heatmap))         
+    assert channel == 1 or channel == 3, \
+            '[error] Input mask\'s channel is {}, only 1 or 3 channels are supported.'.format(channel)    
+    
+    #merge image with specified weights    
+    if np.max(heatmap) <= 1:
+        heatmap *= 255
+    heatmap = heatmap.astype(np.uint8)    
+    weighted_sum = cv2.addWeighted(heatmap, heatmap_weight, image, (1 - heatmap_weight), 0.)
+    
+    img = image.copy()
+    # find heatmap's position on original image and replace these parts with new
+    ind = (heatmap > threshold * 255).any(axis = 2)   
+    #if value on each channel is true, replace them on all channels with merged image
+    img[ind] = weighted_sum[ind]    
+    return img    
