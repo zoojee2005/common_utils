@@ -98,8 +98,8 @@ def heatmap_overlay(image, heatmap, heatmap_weight = 0.5, threshold = 0.1):
     weighted_sum = cv2.addWeighted(heatmap, heatmap_weight, image, (1 - heatmap_weight), 0.)
     
     img = image.copy()
-    # find heatmap's position on original image and replace these parts with new
-    ind = (heatmap > threshold * 255).any(axis = 2)   
-    #if value on each channel is true, replace them on all channels with merged image
+    # find all pixels belong to (1) on original image and replace them with addweighted image
+    # if value on any channel is true, replace them on all channels with merged image
+    ind = (heatmap > threshold * 255).any(axis = 2)       
     img[ind] = weighted_sum[ind]    
     return img    
