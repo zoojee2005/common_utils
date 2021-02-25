@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .image_utils import imread
 
+
 # for project TWTAS, a simpled JSON file does like this
 '''
 {'image': {'flags': {'sideWall': 'false',
@@ -218,5 +219,5 @@ def VisiAnno2Yolo(yolo_anno_path, image_path, visi_dataset, start = 0, length = 
         # create yolo file list
         yolo_files.append(label_file)
     
-    #
+    #    
     return yolo_files
